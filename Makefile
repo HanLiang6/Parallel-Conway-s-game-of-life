@@ -1,7 +1,7 @@
 CXX=mpic++
 # CCFLAGS=-Wall -g
 # activate for compiler optimizations:
-CCFLAGS=-Wall --std=c++17 -O3
+CCFLAGS=-Wall --std=c++17 -O3 -Wall -g
 LDFLAGS=
 
 all: life
@@ -9,7 +9,7 @@ all: life
 .PHONY : tiny_test
 
 life: life.cpp
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CCFLAGS) $(LDFLAGS) -o $@ $^
 
 clean:
 	rm -f *.o life
