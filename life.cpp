@@ -128,19 +128,15 @@ int main(int argc, char** argv) {
 
   const int m = std::stoi(argv[1]);
   const int n = std::stoi(argv[2]);
-  const int p = std::stoi(argv[3]);
-  const int q = std::stoi(argv[4]);
-  const int gen = std::stoi(argv[5]);
-  const std::string input_file(argv[6]);
-  const std::string output_file(argv[7]);
+  const int gen = std::stoi(argv[3]);
+  const std::string input_file(argv[4]);
+  const std::string output_file(argv[5]);
 
   int rank;
   int size;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-  assert(size == p * q);
 
   std::vector<int> global_data;
 
