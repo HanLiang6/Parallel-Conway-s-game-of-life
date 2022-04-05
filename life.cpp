@@ -11,6 +11,8 @@
 #include <tuple>
 #include <vector>
 
+#define NDIM 2
+
 /* Note: All code is provided as a potential reference serial implementation.
  *
  * You are not required to use said code
@@ -163,7 +165,19 @@ int main(int argc, char** argv) {
     }
   } else {
     /* You implement this */
-    assert(0);
+    //assert(0);
+      int wrank, crank;
+      int dims[NDIM] = {0,0};
+      int period[NDIM] = {0,0};
+      int coords[NDIM];
+      MPI_Comm Ccomm
+      
+      MPI_Dims_create(size, NDIM, dims);
+      MPI_Cart_create(MPI_COMM_WORLD, NDIM, dims, period, 1, &Ccomm);
+      
+      MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
+      MPI_Comm_rank(MPI_COMM_WORLD, &crank);
+      MPI_Cart_coords(comm, crank, NDIM, coords);
   }
 
   /* On root, output the data */
