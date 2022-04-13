@@ -46,14 +46,18 @@ std::string vec_to_str(const std::vector<T>& vec, const std::string& delim) {
   return oss.str();
 }
 
+int linear_index(int m, int n, int row, int col) {
+  return row * n + col;
+}
+
 /* A sequential function to update a grid,
  * uses LDA (leading dimension) to allow for subgrid considerations */
-void update_state(int m, int n, int lda, const int* in_grid, int* out_grid) {
+void update_state(int m, int n, const int* in_grid, int* out_grid) {
   
   for (int i = 0; i < m; i++) { // For each row
     for (int j = 0; j < n; j++) { // For each column
       //Consider a single element
-      int lin_loc = i * lda + j; //This is the linear index of the element
+      int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
 
       int alive = 0; 
 
@@ -63,7 +67,7 @@ void update_state(int m, int n, int lda, const int* in_grid, int* out_grid) {
           /* Figure out the index associated with each neighbor */
           int y_loc = i + k;
           int x_loc = j + l;
-          int neighbor_lin_loc = y_loc * lda + x_loc;
+          int neighbor_lin_loc = linear_index(m, n, y_loc, x_loc);
 
           /* Ensure the considered neighbor is in bounds */
           if ((x_loc >= 0) && (y_loc >= 0) && (y_loc < m) && (x_loc < n)) {
@@ -116,7 +120,7 @@ void write_data(const std::string& output_filename, int m, int n,
   std::ofstream output_file(output_filename, std::ios::out);
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      output_file << output_data[i * m + j];
+      output_file << output_data[linear_index(m, n, i, j)];
       if (j < n - 1) {
         output_file << " ";
       }
@@ -156,7 +160,7 @@ int main(int argc, char** argv) {
 
     /* For each generation update the state */
     for (int i = 0; i < gen; i++) {
-      update_state(m, n, m, global_data.data(), output_data.data());
+      update_state(m, n, global_data.data(), output_data.data());
 
       /* Swap the input and output */
       if (i < gen - 1) {
