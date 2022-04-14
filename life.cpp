@@ -174,12 +174,11 @@ int main(int argc, char** argv) {
       int dims[NDIM] = {0,0};
       int period[NDIM] = {0,0};
       int coords[NDIM];
-      MPI_Comm Ccomm
+      MPI_Comm comm;
       
       MPI_Dims_create(size, NDIM, dims);
-      MPI_Cart_create(MPI_COMM_WORLD, NDIM, dims, period, 1, &Ccomm);
+      MPI_Cart_create(MPI_COMM_WORLD, NDIM, dims, period, 1, &comm);
       
-      MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
       MPI_Comm_rank(MPI_COMM_WORLD, &crank);
       MPI_Cart_coords(comm, crank, NDIM, coords);
   }
