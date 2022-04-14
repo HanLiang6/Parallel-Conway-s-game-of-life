@@ -182,6 +182,19 @@ int main(int argc, char** argv) {
       MPI_Comm_rank(comm, &crank);
       MPI_Cart_coords(comm, crank, NDIM, coords);
       
+      MPI_Comm row_comm, column_comm;
+      MPI_Comm_split(comm, coords[0], coords[1], &row_comm);
+      MPI_Comm_split(comm, coords[1], coords[0], &column_comm);
+      
+      int croot;
+      if(rank==0){
+          croot = crank;
+      }
+      MPI_Bcast(&croot, 1, MPI_INT, crank, MPI_COMM_WORLD);
+      
+      int croot_coords[2];
+      MPI_Cart_coords(comm, croot, NDIM, croot_coords);
+      
       
   }
 
