@@ -191,6 +191,7 @@ int main(int argc, char** argv) {
           croot = crank;
       }
       MPI_Bcast(&croot, 1, MPI_INT, crank, MPI_COMM_WORLD);
+      //Broadcast the rank of the root in the Cartesian network
       
       int croot_coords[2];
       MPI_Cart_coords(comm, croot, NDIM, croot_coords);
