@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
   } else {
     /* You implement this */
     //assert(0);
-      int wrank, crank;
+      int crank;
       int dims[NDIM] = {0,0};
       int period[NDIM] = {0,0};
       int coords[NDIM];
@@ -179,8 +179,10 @@ int main(int argc, char** argv) {
       MPI_Dims_create(size, NDIM, dims);
       MPI_Cart_create(MPI_COMM_WORLD, NDIM, dims, period, 1, &comm);
       
-      MPI_Comm_rank(MPI_COMM_WORLD, &crank);
+      MPI_Comm_rank(comm, &crank);
       MPI_Cart_coords(comm, crank, NDIM, coords);
+      
+      
   }
 
   /* On root, output the data */
