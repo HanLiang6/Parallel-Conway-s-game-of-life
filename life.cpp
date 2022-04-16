@@ -196,7 +196,23 @@ int main(int argc, char** argv) {
       int croot_coords[2];
       MPI_Cart_coords(comm, croot, NDIM, croot_coords);
       
+      int sub_m, sub_n, sub_m_last, sub_n_last;
+      sub_m = (m % dims[0])? (m / dims[0] + 1) : (m / dims[0]);
+      sub_n = (n % dims[1])? (n / dims[1] + 1) : (n / dims[1]);
+      sub_m_last = m - sub_m * (dims[0] - 1);
+      sub_n_last = m - sub_n * (dims[1] - 1);
       
+      std::vector<int> tmp_local_data, local_data;
+      //tmp_local_data.reserve(m * n / dims[1] + 1);
+      if(coords[0] == dims[0] - 1){
+          tmp_local_data.reserve(sub_m_last * n);
+      }else{
+          tmp_local_data.reserve(sub_m * n);
+      }
+      
+      MPI_Scatter(&global_data[0], m * n / dims[1] + 1 , MPI_INT,
+                  &tmp_local_data[0], m * n / dims[1] + 1, MPI_INT,
+                  croot_coords[0], column_comm);
   }
 
   /* On root, output the data */
