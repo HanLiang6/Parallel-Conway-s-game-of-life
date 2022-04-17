@@ -29,4 +29,5 @@ non_square_test: life 3x8_example.txt 8x3_example.txt
 	mpirun -np 1 ./life 8 3 1 8x3_example.txt output.txt
 	@cmp --silent output.txt 8x3_ref.txt; RETVAL=$$?; if [ $$RETVAL -eq 0 ]; then echo "PASS NON-SQUARE TEST"; else echo "Fail non-square test"; fi
 
-
+test:
+	mpirun --use-hwthread-cpus -np 2 ./life 9 10 1 new_grid.txt new_output.text

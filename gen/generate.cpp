@@ -134,9 +134,7 @@ int main(int argc, char** argv) {
 
   const int m = std::stoi(argv[1]);
   const int n = std::stoi(argv[2]);
-  const int gen = std::stoi(argv[3]);
-  const std::string input_file(argv[4]);
-  const std::string output_file(argv[5]);
+  const std::string output_file(argv[3]);
 
   int rank;
   int size;
@@ -144,111 +142,16 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  std::vector<int> global_data;
-
-  /* On root, read in the data */
-  if (rank == 0) {
-    read_data(input_file, m, n, global_data);
-  }
-
   std::vector<int> output_data;
 
 
   if (size == 1) { /* If serial, use the serial code */
     /* Allocate the output data buffer */
-    output_data.reserve(global_data.size());
-
-    /* For each generation update the state */
-    for (int i = 0; i < gen; i++) {
-      update_state(m, n, global_data.data(), output_data.data());
-
-      /* Swap the input and output */
-      if (i < gen - 1) {
-        std::swap(global_data, output_data);
+      output_data.reserve(m*n);
+      for(int i = 0; i < m*n; i++) {
+          output_data[i]=i;
       }
     }
-  } else {
-    /* You implement this */
-    //assert(0);
-      int crank;
-      int dims[NDIM] = {0,0};
-      int period[NDIM] = {0,0};
-      int coords[NDIM];
-      MPI_Comm comm;
-      
-      MPI_Dims_create(size, NDIM, dims);
-      MPI_Cart_create(MPI_COMM_WORLD, NDIM, dims, period, 1, &comm);
-      
-      MPI_Comm_rank(comm, &crank);
-      MPI_Cart_coords(comm, crank, NDIM, coords);
-      
-      MPI_Comm row_comm, column_comm;
-      MPI_Comm_split(comm, coords[0], coords[1], &row_comm);
-      MPI_Comm_split(comm, coords[1], coords[0], &column_comm);
-      
-      int croot;
-      if(rank==0){
-          croot = crank;
-      }
-      MPI_Bcast(&croot, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      //Broadcast the rank of the root in the Cartesian network
-      
-      int croot_coords[2];
-      MPI_Cart_coords(comm, croot, NDIM, croot_coords);
-      
-      int sub_m, sub_n, sub_m_last, sub_n_last;
-      sub_m = (m % dims[0])? (m / dims[0] + 1) : (m / dims[0]);
-      sub_n = (n % dims[1])? (n / dims[1] + 1) : (n / dims[1]);
-      sub_m_last = m - sub_m * (dims[0] - 1);
-      sub_n_last = m - sub_n * (dims[1] - 1);
-      
-      std::vector<int> tmp_local_data, local_data;
-      //tmp_local_data.reserve(m * n / dims[1] + 1);
-      tmp_local_data.resize(sub_m * n);
-      
-//      if(coords[0] == dims[0] - 1){
-//          tmp_local_data.reserve(sub_m_last * n);
-//      }else{
-//          tmp_local_data.reserve(sub_m * n);
-//      }
-      
-      
-      std::vector<int> column_scounts, column_displs;
-      column_scounts.resize(dims[0]-1, sub_m * n);
-      column_scounts.push_back(sub_m_last * n);
-      column_displs.resize(dims[0], 0);
-      for(int i = 1; i < dims[0]; i++){
-          column_displs[i] = column_displs[i-1] + sub_m * n;
-      }
-      
-//      if(rank==0){
-//      for(int i = 0; i<column_scounts.size();i++){
-//          std::cout<<column_scounts[i]<<"\n";
-//          std::cout<<column_displs[i]<<"\n";
-//      }
-//          std::cout<<dims[0]<<" "<<dims[1]<<"\n";
-//      }
-      
-      MPI_Scatterv(&global_data[0], &column_scounts[0], &column_displs[0],
-                   MPI_INT, &tmp_local_data[0], sub_m * n, MPI_INT,
-                   croot_coords[0], column_comm);
-      
-      /*
-      MPI_Scatter(&global_data[0], m * n / dims[1] + 1 , MPI_INT,
-                  &tmp_local_data[0], m * n / dims[1] + 1, MPI_INT,
-                  croot_coords[0], column_comm);
-       */
-      
-      output_data.reserve(m * n);
-
-      MPI_Gatherv(&tmp_local_data[0], sub_m * n, MPI_INT,
-                  &output_data[0], &column_scounts[0], &column_displs[0],
-                  MPI_INT, croot_coords[0], column_comm);
-    
-      MPI_Comm_free(&column_comm);
-      MPI_Comm_free(&row_comm);
-      MPI_Comm_free(&comm);
-  }
 
   /* On root, output the data */
   if (rank == 0) {
