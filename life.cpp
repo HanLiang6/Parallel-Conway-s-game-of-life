@@ -200,17 +200,17 @@ int main(int argc, char** argv) {
       sub_m = (m % dims[0])? (m / dims[0] + 1) : (m / dims[0]);
       sub_n = (n % dims[1])? (n / dims[1] + 1) : (n / dims[1]);
       sub_m_last = m - sub_m * (dims[0] - 1);
-      sub_n_last = m - sub_n * (dims[1] - 1);
+      sub_n_last = n - sub_n * (dims[1] - 1);
       
       std::vector<int> tmp_local_data, local_data;
       //tmp_local_data.reserve(m * n / dims[1] + 1);
-      tmp_local_data.resize(sub_m * n);
+//      tmp_local_data.resize(sub_m * n);
       
-//      if(coords[0] == dims[0] - 1){
-//          tmp_local_data.reserve(sub_m_last * n);
-//      }else{
-//          tmp_local_data.reserve(sub_m * n);
-//      }
+      if(coords[0] == dims[0] - 1){
+          tmp_local_data.reserve(sub_m_last * n);
+      }else{
+          tmp_local_data.reserve(sub_m * n);
+      }
       
       
       std::vector<int> column_scounts, column_displs;
@@ -228,8 +228,8 @@ int main(int argc, char** argv) {
 //      }
 //          std::cout<<dims[0]<<" "<<dims[1]<<"\n";
 //      }
-      
-      MPI_Scatterv(&global_data[0], &column_scounts[0], &column_displs[0],
+      if(coords[1]==croot_coords[1]){
+          MPI_Scatterv(&global_data[0], &column_scounts[0], &column_displs[0],
                    MPI_INT, &tmp_local_data[0], sub_m * n, MPI_INT,
                    croot_coords[0], column_comm);
       
@@ -239,11 +239,17 @@ int main(int argc, char** argv) {
                   croot_coords[0], column_comm);
        */
       
-      output_data.reserve(m * n);
+          output_data.reserve(sub_m * n * dims[0]);
+//          tmp_local_data.resize(sub_m * n);
 
-      MPI_Gatherv(&tmp_local_data[0], sub_m * n, MPI_INT,
-                  &output_data[0], &column_scounts[0], &column_displs[0],
+          MPI_Gather(&tmp_local_data[0], sub_m * n, MPI_INT,
+                  &output_data[0], sub_m * n,
                   MPI_INT, croot_coords[0], column_comm);
+          output_data.resize(global_data.size());
+//          MPI_Gatherv(&tmp_local_data[0], sub_m * n, MPI_INT,
+//                  &output_data[0], &column_scounts[0], &column_displs[0],
+//                  MPI_INT, croot_coords[0], column_comm);
+      }
     
       MPI_Comm_free(&column_comm);
       MPI_Comm_free(&row_comm);
