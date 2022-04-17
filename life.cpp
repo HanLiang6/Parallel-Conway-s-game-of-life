@@ -202,48 +202,130 @@ int main(int argc, char** argv) {
       sub_m_last = m - sub_m * (dims[0] - 1);
       sub_n_last = m - sub_n * (dims[1] - 1);
       
-      std::vector<int> tmp_local_data, local_data;
-      //tmp_local_data.reserve(m * n / dims[1] + 1);
-      tmp_local_data.resize(sub_m * n);
+      std::vector<int> local_data;
       
-//      if(coords[0] == dims[0] - 1){
-//          tmp_local_data.reserve(sub_m_last * n);
-//      }else{
-//          tmp_local_data.reserve(sub_m * n);
-//      }
-      
-      
-      std::vector<int> column_scounts, column_displs;
-      column_scounts.resize(dims[0]-1, sub_m * n);
-      column_scounts.push_back(sub_m_last * n);
-      column_displs.resize(dims[0], 0);
-      for(int i = 1; i < dims[0]; i++){
-          column_displs[i] = column_displs[i-1] + sub_m * n;
+      if(coords[0] == dims[0] - 1){
+          if(coords[1] == dims[1] - 1){
+              local_data.reserve(sub_m_last * sub_n_last);
+          }else{
+              local_data.reserve(sub_m_last * sub_n);
+          }
+      }else{
+          if(coords[1] == dims[1] - 1){
+              local_data.reserve(sub_m * sub_n_last);
+          }else{
+              local_data.reserve(sub_m * sub_n);
+          }
       }
       
-//      if(rank==0){
-//      for(int i = 0; i<column_scounts.size();i++){
-//          std::cout<<column_scounts[i]<<"\n";
-//          std::cout<<column_displs[i]<<"\n";
-//      }
-//          std::cout<<dims[0]<<" "<<dims[1]<<"\n";
-//      }
+      MPI_Datatype tmp, col_type, col_type_last;
+      MPI_Type_vector(sub_m, 1, n, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sizeof(int), &col_type);
+      MPI_Type_commit(&col_type);
+      MPI_Type_vector(sub_m_last, 1, n, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sizeof(int), &col_type_last);
+      MPI_Type_commit(&col_type_last);
       
-      MPI_Scatterv(&global_data[0], &column_scounts[0], &column_displs[0],
-                   MPI_INT, &tmp_local_data[0], sub_m * n, MPI_INT,
-                   croot_coords[0], column_comm);
+      int srank;
+      int scoords[NDIM];
+      MPI_Request req;
+      MPI_Status status;
       
-      /*
-      MPI_Scatter(&global_data[0], m * n / dims[1] + 1 , MPI_INT,
-                  &tmp_local_data[0], m * n / dims[1] + 1, MPI_INT,
-                  croot_coords[0], column_comm);
-       */
+      if(rank==0){
+          int displs;
+      for(int i=0; i<dims[0]; i++){
+          for(int j=0; j<dims[1]; j++){
+              displs = i * n * sub_m + j * sub_n;
+              scoords[0] = i;
+              scoords[1] = j;
+              MPI_Cart_rank(comm, scoords, &srank);
+              if(i<dims[0]-1){
+                  if(j<dims[1]-1){
+                      MPI_Isend(&global_data[displs], sub_n, col_type,
+                                srank, 1, comm, &req);
+                  }else{
+                      MPI_Isend(&global_data[displs], sub_n_last, col_type,
+                                srank, 1, comm, &req);
+                  }
+              }else{
+                  if(j<dims[1]-1){
+                      MPI_Isend(&global_data[displs], sub_n, col_type_last,
+                                srank, 1, comm, &req);
+                  }else{
+                      MPI_Isend(&global_data[displs], sub_n_last, col_type_last,
+                                srank, 1, comm, &req);
+                  }
+              }
+          }
+      }
+      }
+      
+      if(coords[0]<dims[0]-1){
+          if(coords[1]<dims[1]-1){
+              MPI_Recv(&local_data[0], sub_n, col_type,
+                        croot, 1, comm, &status);
+          }else{
+              MPI_Recv(&local_data[0], sub_n_last, col_type,
+                        croot, 1, comm, &status);
+          }
+      }else{
+          if(coords[1]<dims[1]-1){
+              MPI_Recv(&local_data[0], sub_n, col_type_last,
+                        croot, 1, comm, &status);
+          }else{
+              MPI_Recv(&local_data[0], sub_n_last, col_type_last,
+                        croot, 1, comm, &status);
+          }
+      }
       
       output_data.reserve(m * n);
 
-      MPI_Gatherv(&tmp_local_data[0], sub_m * n, MPI_INT,
-                  &output_data[0], &column_scounts[0], &column_displs[0],
-                  MPI_INT, croot_coords[0], column_comm);
+      if(coords[0]<dims[0]-1){
+          if(coords[1]<dims[1]-1){
+              MPI_Isend(&local_data[0], sub_n, col_type,
+                        croot, 1, comm, &req);
+          }else{
+              MPI_Isend(&local_data[0], sub_n_last, col_type,
+                        croot, 1, comm, &req);
+          }
+      }else{
+          if(coords[1]<dims[1]-1){
+              MPI_Isend(&local_data[0], sub_n, col_type_last,
+                        croot, 1, comm, &req);
+          }else{
+              MPI_Isend(&local_data[0], sub_n_last, col_type_last,
+                        croot, 1, comm, &req);
+          }
+      }
+      
+      if(rank==0){
+          int displs;
+      for(int i=0; i<dims[0]; i++){
+          for(int j=0; j<dims[1]; j++){
+              displs = i * n * sub_m + j * sub_n;
+              scoords[0] = i;
+              scoords[1] = j;
+              MPI_Cart_rank(comm, scoords, &srank);
+              if(i<dims[0]-1){
+                  if(j<dims[1]-1){
+                      MPI_Recv(&output_data[displs], sub_n, col_type,
+                                srank, 1, comm, &status);
+                  }else{
+                      MPI_Recv(&output_data[displs], sub_n_last, col_type,
+                                srank, 1, comm, &status);
+                  }
+              }else{
+                  if(j<dims[1]-1){
+                      MPI_Recv(&output_data[displs], sub_n, col_type_last,
+                                srank, 1, comm, &status);
+                  }else{
+                      MPI_Recv(&output_data[displs], sub_n_last, col_type_last,
+                                srank, 1, comm, &status);
+                  }
+              }
+          }
+      }
+      }
     
       MPI_Comm_free(&column_comm);
       MPI_Comm_free(&row_comm);
