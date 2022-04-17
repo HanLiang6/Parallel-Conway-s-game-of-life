@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
       sub_m = (m % dims[0])? (m / dims[0] + 1) : (m / dims[0]);
       sub_n = (n % dims[1])? (n / dims[1] + 1) : (n / dims[1]);
       sub_m_last = m - sub_m * (dims[0] - 1);
-      sub_n_last = m - sub_n * (dims[1] - 1);
+      sub_n_last = n - sub_n * (dims[1] - 1);
       
       std::vector<int> local_data;
       
@@ -262,18 +262,18 @@ int main(int argc, char** argv) {
       
       if(coords[0]<dims[0]-1){
           if(coords[1]<dims[1]-1){
-              MPI_Recv(&local_data[0], sub_n, col_type,
+              MPI_Recv(&local_data[0], sub_m * sub_n, MPI_INT,
                         croot, 1, comm, &status);
           }else{
-              MPI_Recv(&local_data[0], sub_n_last, col_type,
+              MPI_Recv(&local_data[0], sub_m * sub_n_last, MPI_INT,
                         croot, 1, comm, &status);
           }
       }else{
           if(coords[1]<dims[1]-1){
-              MPI_Recv(&local_data[0], sub_n, col_type_last,
+              MPI_Recv(&local_data[0], sub_m_last * sub_n, MPI_INT,
                         croot, 1, comm, &status);
           }else{
-              MPI_Recv(&local_data[0], sub_n_last, col_type_last,
+              MPI_Recv(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
                         croot, 1, comm, &status);
           }
       }
@@ -282,18 +282,18 @@ int main(int argc, char** argv) {
 
       if(coords[0]<dims[0]-1){
           if(coords[1]<dims[1]-1){
-              MPI_Isend(&local_data[0], sub_n, col_type,
+              MPI_Isend(&local_data[0], sub_m * sub_n, MPI_INT,
                         croot, 1, comm, &req);
           }else{
-              MPI_Isend(&local_data[0], sub_n_last, col_type,
+              MPI_Isend(&local_data[0], sub_m * sub_n_last, MPI_INT,
                         croot, 1, comm, &req);
           }
       }else{
           if(coords[1]<dims[1]-1){
-              MPI_Isend(&local_data[0], sub_n, col_type_last,
+              MPI_Isend(&local_data[0], sub_m_last * sub_n, MPI_INT,
                         croot, 1, comm, &req);
           }else{
-              MPI_Isend(&local_data[0], sub_n_last, col_type_last,
+              MPI_Isend(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
                         croot, 1, comm, &req);
           }
       }

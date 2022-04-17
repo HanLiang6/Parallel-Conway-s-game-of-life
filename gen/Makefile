@@ -13,4 +13,4 @@ clean:
 	rm -f *.o life
 	
 new:
-	mpirun -np 1 ./generate 9 10 new_grid.txt
+	mpirun -np 1 ./generate 17 13 new_grid.txt
