@@ -102,6 +102,55 @@ void update_state(int m, int n, const int* in_grid, int* out_grid) {
   }
 }
 
+//update the internal subgrid
+void update_innerstate(int m, int n, const int* in_grid, int* out_grid) {
+  
+  for (int i = 1; i < m-1; i++) { // For each row
+    for (int j = 1; j < n-1; j++) { // For each column
+      //Consider a single element
+      int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
+
+      int alive = 0;
+
+      /* Look at each neighbor */
+      for (int k = -1; k < 2; k++) {
+        for (int l = -1; l < 2; l++) {
+          /* Figure out the index associated with each neighbor */
+          int y_loc = i + k;
+          int x_loc = j + l;
+          int neighbor_lin_loc = linear_index(m, n, y_loc, x_loc);
+
+            /* Check that the neighbor is actually a neighbor */
+            if (!(k == 0 && l == 0)) {
+              /* If it is alive, count it as alive */
+                if (in_grid[neighbor_lin_loc]) {
+                alive++;
+                }
+            }
+        }
+      }
+
+      /* Based on the number of alive neighbors, update the output accordingly */
+      if (in_grid[lin_loc]) {
+        if (alive < 2) {
+          out_grid[lin_loc] = 0;
+        } else if (alive > 3) {
+          out_grid[lin_loc] = 0;
+        } else {
+          out_grid[lin_loc] = 1;
+        }
+      } else {
+        if (alive == 3) {
+          out_grid[lin_loc] = 1;
+        } else {
+          out_grid[lin_loc] = 0;
+        }
+      }
+    }
+  }
+}
+
+
 /* Read in the data from an input file */
 void read_data(const std::string& input_filename, int m, int n,
                std::vector<int>& output_data) {
@@ -277,7 +326,56 @@ int main(int argc, char** argv) {
                         croot, 1, comm, &status);
           }
       }
+      //Finish distributa data
       
+      //persistent communication
+      std::vector<int> edge_up, edge_down, edge_left, edge_right;
+      int height, width;
+      if(coords[0]<dims[0]-1){
+          if(coords[1]<dims[1]-1){
+              height = sub_m;
+              width = sub_n
+          }else{
+              height = sub_m;
+              width = sub_n_last;
+          }
+      }else{
+          if(coords[1]<dims[1]-1){
+              height = sub_m_last;
+              width = sub_n
+          }else{
+              height = sub_m_last;
+              width = sub_n_last;
+          }
+      }
+      edge_up.resize(width+2,0);
+      edge_down.resize(width+2,0);
+      edge_left.resize(height,0);
+      edge_right.resize(height,0);
+      
+      MPI_Request request_send_up, request_send_down, request_send_left, request_send_right;
+      MPI_Request request_recv_up, request_recv_down, request_recv_left, request_recv_right;
+      
+      MPI_Datatype local_col_type;
+      MPI_Type_vector(height, 1, width, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sizeof(int), &local_col_type);
+      MPI_Type_commit(&local_col_type);
+      
+      if(coords[1]!=0){
+          MPI_Send_init(&local_data[0], 1, local_col_type, coords[1]-1, 1, row_comm, &request_send_left);
+      }
+      if(coords[1]!=0){
+          MPI_Recv_init(&edge_left[0], height, MPI_INT, coords[1]-1, 1, row_comm, &request_recv_left);
+      }
+      
+      if(coords[1]!=dims[1]-1){
+          MPI_Send_init(&local_data[0], 1, local_col_type, coords[1]+1, 1, row_comm, &request_send_right);
+      }
+      if(coords[1]!=dims[1]-1){
+          MPI_Recv_init(&edge_left[0], height, MPI_INT, coords[1]+1, 1, row_comm, &request_recv_right);
+      }
+      
+      //Collect data to rank 0 processor
       output_data.reserve(m * n);
 
       if(coords[0]<dims[0]-1){
