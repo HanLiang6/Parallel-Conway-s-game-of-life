@@ -155,6 +155,9 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
   
   for (int i = 1; i < m-1; i++) { // For each row
     for (int j = 0; j < n; j += n-1) { // For each column
+        
+    //n-1 could be 0, fix!
+        
       //Consider a single element
       int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
 
@@ -662,14 +665,18 @@ int main(int argc, char** argv) {
               MPI_Wait(&request_recv_lcornor, &status);
           }
           
+          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" ready for edge compute"<<"\n";
+          
           update_edge(height, width, local_data.data(), local_output_data.data(),
                       edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+          
+          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done edge compute"<<"\n";
           
           update_corner(height, width, local_data.data(), local_output_data.data(),
                         upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
 
           
-          std::cout<<"rank "<<rank<<" done edge compute"<<"\n";
+          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done corner compute"<<"\n";
           
           
         /* Swap the input and output */
