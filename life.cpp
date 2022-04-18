@@ -215,10 +215,10 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
           out_grid[lin_loc] = 0;
         }
       }
+        if(n==1){
+            break;
+        }
     }
-      if(n==1){
-          break;
-      }
   }
     
     for (int i = 0; i < m; i += m-1) { // For each row
