@@ -35,3 +35,7 @@ test:
 non_square_test_np: life 3x8_example.txt 8x3_example.txt
 	mpirun --use-hwthread-cpus -np 4 ./life 3 8 1 3x8_example.txt output.txt
 	@cmp --silent output.txt 3x8_ref.txt; RETVAL=$$?; if [ $$RETVAL -eq 0 ]; then echo "PASS NON-SQUARE TEST"; else echo "Fail non-square test"; fi
+
+tiny_test_np: life 5_example.txt 3_example.txt
+	mpirun -np 1 ./life 5 5 1 5_example.txt output.txt
+	@cmp --silent output.txt 5_ref.txt; RETVAL=$$?; if [ $$RETVAL -eq 0 ]; then echo "PASS TINY TEST"; else echo "Fail tiny test"; fi
