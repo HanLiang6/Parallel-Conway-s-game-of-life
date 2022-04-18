@@ -150,6 +150,236 @@ void update_innerstate(int m, int n, const int* in_grid, int* out_grid) {
   }
 }
 
+void update_edge(int m, int n, const int* in_grid, int* out_grid,
+                 int upcor[2], int locor[2], int* upedge, int* loedge, int* leftedge, int* rightedge) {
+  
+  for (int i = 1; i < m-1; i++) { // For each row
+    for (int j = 0; j < n; j += n-1) { // For each column
+      //Consider a single element
+      int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
+
+      int alive = 0;
+
+      /* Look at each neighbor */
+      for (int k = -1; k < 2; k++) {
+        for (int l = -1; l < 2; l++) {
+          /* Figure out the index associated with each neighbor */
+            int y_loc = i + k;
+            int x_loc = j + l;
+            int neighbor_lin_loc = linear_index(m, n, y_loc, x_loc);
+
+            if ((x_loc >= 0) && (y_loc >= 0) && (y_loc < m) && (x_loc < n)) {
+              /* Check that the neighbor is actually a neighbor */
+              if (!(k == 0 && l == 0)) {
+                /* If it is alive, count it as alive */
+                if (in_grid[neighbor_lin_loc]) {
+                  alive++;
+                }
+              }
+            }
+        }
+      }
+        if(j==0){
+            for(int k = -1; k<2; k++){
+                int y_loc = i + k;
+                if(leftedge[y_loc]){
+                    alive++;
+                }
+            }
+        }
+        if(j==n-1){
+            for(int k = -1; k<2; k++){
+                int y_loc = i + k;
+                if(rightedge[y_loc]){
+                    alive++;
+                }
+            }
+        }
+
+      /* Based on the number of alive neighbors, update the output accordingly */
+      if (in_grid[lin_loc]) {
+        if (alive < 2) {
+          out_grid[lin_loc] = 0;
+        } else if (alive > 3) {
+          out_grid[lin_loc] = 0;
+        } else {
+          out_grid[lin_loc] = 1;
+        }
+      } else {
+        if (alive == 3) {
+          out_grid[lin_loc] = 1;
+        } else {
+          out_grid[lin_loc] = 0;
+        }
+      }
+    }
+  }
+    
+    for (int i = 0; i < m; i += m-1) { // For each row
+      for (int j = 1; j < n-1; j++) { // For each column
+        //Consider a single element
+        int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
+
+        int alive = 0;
+
+        /* Look at each neighbor */
+        for (int k = -1; k < 2; k++) {
+          for (int l = -1; l < 2; l++) {
+            /* Figure out the index associated with each neighbor */
+              int y_loc = i + k;
+              int x_loc = j + l;
+              int neighbor_lin_loc = linear_index(m, n, y_loc, x_loc);
+
+              if ((x_loc >= 0) && (y_loc >= 0) && (y_loc < m) && (x_loc < n)) {
+                /* Check that the neighbor is actually a neighbor */
+                if (!(k == 0 && l == 0)) {
+                  /* If it is alive, count it as alive */
+                  if (in_grid[neighbor_lin_loc]) {
+                    alive++;
+                  }
+                }
+              }
+          }
+        }
+          if(i==0){
+              for(int k = -1; k<2; k++){
+                  int x_loc = j + k;
+                  if(upedge[x_loc]){
+                      alive++;
+                  }
+              }
+          }
+          if(i==m-1){
+              for(int k = -1; k<2; k++){
+                  int x_loc = j + k;
+                  if(loedge[x_loc]){
+                      alive++;
+                  }
+              }
+          }
+
+        /* Based on the number of alive neighbors, update the output accordingly */
+        if (in_grid[lin_loc]) {
+          if (alive < 2) {
+            out_grid[lin_loc] = 0;
+          } else if (alive > 3) {
+            out_grid[lin_loc] = 0;
+          } else {
+            out_grid[lin_loc] = 1;
+          }
+        } else {
+          if (alive == 3) {
+            out_grid[lin_loc] = 1;
+          } else {
+            out_grid[lin_loc] = 0;
+          }
+        }
+      }
+    }
+    
+    for (int i = 0; i < m; i += m-1) { // For each row
+      for (int j = 0; j < n; j += n-1) { // For each column
+        //Consider a single element
+        int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
+
+        int alive = 0;
+
+        /* Look at each neighbor */
+        for (int k = -1; k < 2; k++) {
+          for (int l = -1; l < 2; l++) {
+            /* Figure out the index associated with each neighbor */
+              int y_loc = i + k;
+              int x_loc = j + l;
+              int neighbor_lin_loc = linear_index(m, n, y_loc, x_loc);
+
+              if ((x_loc >= 0) && (y_loc >= 0) && (y_loc < m) && (x_loc < n)) {
+                /* Check that the neighbor is actually a neighbor */
+                if (!(k == 0 && l == 0)) {
+                  /* If it is alive, count it as alive */
+                  if (in_grid[neighbor_lin_loc]) {
+                    alive++;
+                  }
+                }
+              }
+          }
+        }
+          if(i==0){
+              for(int k = -1; k < 2; k++){
+                  int x_loc = j + k;
+                  if((x_loc >= 0)&&(x_loc < n)){
+                      if(upedge[x_loc]){
+                          alive++;
+                      }
+                  }
+              }
+              if(j==0){
+                  alive += upcor[0];
+              }
+              if(j==n-1){
+                  alive += upcor[1];
+              }
+          }
+          if(i==m-1){
+              for(int k = -1; k < 2; k++){
+                  int x_loc = j + k;
+                  if((x_loc >= 0)&&(x_loc < n)){
+                      if(loedge[x_loc]){
+                          alive++;
+                      }
+                  }
+              }
+              if(j==0){
+                  alive += locor[0];
+              }
+              if(j==n-1){
+                  alive += locor[1];
+              }
+          }
+          
+          if(j==0){
+              for(int l = -1; l < 2; l++){
+                  int y_loc = i + l;
+                  if((y_loc >= 0)&&(y_loc < m)){
+                      if(leftedge[y_loc]){
+                          alive++;
+                      }
+                  }
+              }
+          }
+          if(j==n-1){
+              for(int l = -1; l < 2; l++){
+                  int y_loc = i + l;
+                  if((y_loc >= 0)&&(y_loc < m)){
+                      if(rightedge[y_loc]){
+                          alive++;
+                      }
+                  }
+              }
+          }
+          
+
+
+        /* Based on the number of alive neighbors, update the output accordingly */
+        if (in_grid[lin_loc]) {
+          if (alive < 2) {
+            out_grid[lin_loc] = 0;
+          } else if (alive > 3) {
+            out_grid[lin_loc] = 0;
+          } else {
+            out_grid[lin_loc] = 1;
+          }
+        } else {
+          if (alive == 3) {
+            out_grid[lin_loc] = 1;
+          } else {
+            out_grid[lin_loc] = 0;
+          }
+        }
+      }
+    }
+
+}
+
 
 /* Read in the data from an input file */
 void read_data(const std::string& input_filename, int m, int n,
@@ -330,35 +560,23 @@ int main(int argc, char** argv) {
       MPI_Recv(&local_data[0], height * width, MPI_INT,
                 croot, 1, comm, &status);
       
-//      if(coords[0]<dims[0]-1){
-//          if(coords[1]<dims[1]-1){
-//              MPI_Recv(&local_data[0], sub_m * sub_n, MPI_INT,
-//                        croot, 1, comm, &status);
-//          }else{
-//              MPI_Recv(&local_data[0], sub_m * sub_n_last, MPI_INT,
-//                        croot, 1, comm, &status);
-//          }
-//      }else{
-//          if(coords[1]<dims[1]-1){
-//              MPI_Recv(&local_data[0], sub_m_last * sub_n, MPI_INT,
-//                        croot, 1, comm, &status);
-//          }else{
-//              MPI_Recv(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
-//                        croot, 1, comm, &status);
-//          }
-//      }
       //Finish distributa data
       
       //persistent communication
       std::vector<int> edge_up, edge_down, edge_left, edge_right;
+      int upper_corner_tmp[2] = {0,0};
+      int lower_corner_tmp[2] = {0,0};
+      int upper_corner[2] = {0,0};
+      int lower_corner[2] = {0,0};
 
-      edge_up.resize(width+2,0);
-      edge_down.resize(width+2,0);
+      edge_up.resize(width,0);
+      edge_down.resize(width,0);
       edge_left.resize(height,0);
       edge_right.resize(height,0);
       
       MPI_Request request_send_up, request_send_down, request_send_left, request_send_right;
       MPI_Request request_recv_up, request_recv_down, request_recv_left, request_recv_right;
+      MPI_Request request_send_ucorner, request_send_lcornor, request_recv_ucorner, request_recv_lcornor;
       
       MPI_Datatype local_col_type;
       MPI_Type_vector(height, 1, width, MPI_INT, &tmp);
@@ -367,16 +585,43 @@ int main(int argc, char** argv) {
       
       if(coords[1]!=0){
           MPI_Send_init(&local_data[0], 1, local_col_type, coords[1]-1, 1, row_comm, &request_send_left);
-      }
-      if(coords[1]!=0){
           MPI_Recv_init(&edge_left[0], height, MPI_INT, coords[1]-1, 1, row_comm, &request_recv_left);
       }
       
       if(coords[1]!=dims[1]-1){
-          MPI_Send_init(&local_data[0], 1, local_col_type, coords[1]+1, 1, row_comm, &request_send_right);
+          MPI_Send_init(&local_data[width - 1], 1, local_col_type, coords[1]+1, 1, row_comm, &request_send_right);
+          MPI_Recv_init(&edge_right[0], height, MPI_INT, coords[1]+1, 1, row_comm, &request_recv_right);
       }
-      if(coords[1]!=dims[1]-1){
-          MPI_Recv_init(&edge_left[0], height, MPI_INT, coords[1]+1, 1, row_comm, &request_recv_right);
+      
+      if(coords[0]!=0){
+          MPI_Send_init(&local_data[0], width, MPI_INT, coords[0]-1, 1, column_comm, &request_send_up);
+          MPI_Send_init(&upper_corner_tmp[0], 2, MPI_INT, coords[0]-1, 1, column_comm, &request_send_ucorner);
+          MPI_Recv_init(&edge_up[0], width, MPI_INT, coords[0]-1, 1, column_comm, &request_recv_up);
+          MPI_Recv_init(&upper_corner[0], 2, MPI_INT, coords[0]-1, 1, column_comm, &request_recv_ucorner);
+      }
+      
+      if(coords[0]!=dims[0]-1){
+          MPI_Send_init(&local_data[width * (height - 1)], width, MPI_INT, coords[0]+1, 1, column_comm, &request_send_down);
+          MPI_Send_init(&lower_corner_tmp[0], 2, MPI_INT, coords[0]+1, 1, column_comm, &request_send_lcornor);
+          MPI_Recv_init(&edge_down[0], width, MPI_INT, coords[0]+1, 1, column_comm, &request_recv_down);
+          MPI_Recv_init(&lower_corner[0], 2, MPI_INT, coords[0]+1, 1, column_comm, &request_recv_lcornor);
+      }
+      
+      //Update state
+      std::vector<int> local_output_data;
+      local_output_data.reserve(height * width);
+      
+      for (int i = 0; i < gen; i++) {
+          
+          update_innerstate(height, width, local_data.data(), local_output_data.data());
+          
+          update_edge(height, width, local_data.data(), local_output_data.data(),
+                           upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+
+        /* Swap the input and output */
+        if (i < gen - 1) {
+          std::swap(local_data, local_output_data);
+        }
       }
       
       //Collect data to rank 0 processor
@@ -384,24 +629,6 @@ int main(int argc, char** argv) {
 
       MPI_Isend(&local_data[0], height * width, MPI_INT,
                 croot, 1, comm, &req);
-      
-//      if(coords[0]<dims[0]-1){
-//          if(coords[1]<dims[1]-1){
-//              MPI_Isend(&local_data[0], sub_m * sub_n, MPI_INT,
-//                        croot, 1, comm, &req);
-//          }else{
-//              MPI_Isend(&local_data[0], sub_m * sub_n_last, MPI_INT,
-//                        croot, 1, comm, &req);
-//          }
-//      }else{
-//          if(coords[1]<dims[1]-1){
-//              MPI_Isend(&local_data[0], sub_m_last * sub_n, MPI_INT,
-//                        croot, 1, comm, &req);
-//          }else{
-//              MPI_Isend(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
-//                        croot, 1, comm, &req);
-//          }
-//      }
       
       if(rank==0){
           int displs_row = 0;
