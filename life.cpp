@@ -246,26 +246,33 @@ int main(int argc, char** argv) {
       MPI_Cart_coords(comm, croot, NDIM, croot_coords);
       
       int sub_m, sub_n, sub_m_last, sub_n_last;
-      sub_m = (m % dims[0])? (m / dims[0] + 1) : (m / dims[0]);
-      sub_n = (n % dims[1])? (n / dims[1] + 1) : (n / dims[1]);
-      sub_m_last = m - sub_m * (dims[0] - 1);
-      sub_n_last = n - sub_n * (dims[1] - 1);
+      sub_m = m / dims[0] + 1;
+      sub_n = n / dims[1] + 1;
+      sub_m_last = m / dims[0];
+      sub_n_last = n / dims[1];
+      
+      int height, width;
+      if(coords[0]< m % dims[0]){
+          if(coords[1]< n % dims[1]){
+              height = sub_m;
+              width = sub_n;
+          }else{
+              height = sub_m;
+              width = sub_n_last;
+          }
+      }else{
+          if(coords[1]< n % dims[1]){
+              height = sub_m_last;
+              width = sub_n;
+          }else{
+              height = sub_m_last;
+              width = sub_n_last;
+          }
+      }
       
       std::vector<int> local_data;
       
-      if(coords[0] == dims[0] - 1){
-          if(coords[1] == dims[1] - 1){
-              local_data.reserve(sub_m_last * sub_n_last);
-          }else{
-              local_data.reserve(sub_m_last * sub_n);
-          }
-      }else{
-          if(coords[1] == dims[1] - 1){
-              local_data.reserve(sub_m * sub_n_last);
-          }else{
-              local_data.reserve(sub_m * sub_n);
-          }
-      }
+      local_data.reserve(height * width);
       
       MPI_Datatype tmp, col_type, col_type_last;
       MPI_Type_vector(sub_m, 1, n, MPI_INT, &tmp);
@@ -281,73 +288,70 @@ int main(int argc, char** argv) {
       MPI_Status status;
       
       if(rank==0){
-          int displs;
+          int displs_row = 0;
+          int displs_column = 0;
       for(int i=0; i<dims[0]; i++){
           for(int j=0; j<dims[1]; j++){
-              displs = i * n * sub_m + j * sub_n;
               scoords[0] = i;
               scoords[1] = j;
               MPI_Cart_rank(comm, scoords, &srank);
-              if(i<dims[0]-1){
-                  if(j<dims[1]-1){
-                      MPI_Isend(&global_data[displs], sub_n, col_type,
+              if(i< m % dims[0]){
+                  if(j< n % dims[1]){
+                      MPI_Isend(&global_data[displs_row + displs_column], sub_n, col_type,
                                 srank, 1, comm, &req);
                   }else{
-                      MPI_Isend(&global_data[displs], sub_n_last, col_type,
+                      MPI_Isend(&global_data[displs_row + displs_column], sub_n_last, col_type,
                                 srank, 1, comm, &req);
                   }
               }else{
-                  if(j<dims[1]-1){
-                      MPI_Isend(&global_data[displs], sub_n, col_type_last,
+                  if(j< n % dims[1]){
+                      MPI_Isend(&global_data[displs_row + displs_column], sub_n, col_type_last,
                                 srank, 1, comm, &req);
                   }else{
-                      MPI_Isend(&global_data[displs], sub_n_last, col_type_last,
+                      MPI_Isend(&global_data[displs_row + displs_column], sub_n_last, col_type_last,
                                 srank, 1, comm, &req);
                   }
               }
+              if(j < n % dims[1]){
+                  displs_column += sub_n;
+              }else{
+                  displs_column += sub_n_last;
+              }
           }
+          if(i < m % dims[0]){
+              displs_row += sub_m * n;
+          }else{
+              displs_row += sub_m_last * n;
+          }
+          displs_column = 0;
       }
       }
       
-      if(coords[0]<dims[0]-1){
-          if(coords[1]<dims[1]-1){
-              MPI_Recv(&local_data[0], sub_m * sub_n, MPI_INT,
-                        croot, 1, comm, &status);
-          }else{
-              MPI_Recv(&local_data[0], sub_m * sub_n_last, MPI_INT,
-                        croot, 1, comm, &status);
-          }
-      }else{
-          if(coords[1]<dims[1]-1){
-              MPI_Recv(&local_data[0], sub_m_last * sub_n, MPI_INT,
-                        croot, 1, comm, &status);
-          }else{
-              MPI_Recv(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
-                        croot, 1, comm, &status);
-          }
-      }
+      MPI_Recv(&local_data[0], height * width, MPI_INT,
+                croot, 1, comm, &status);
+      
+//      if(coords[0]<dims[0]-1){
+//          if(coords[1]<dims[1]-1){
+//              MPI_Recv(&local_data[0], sub_m * sub_n, MPI_INT,
+//                        croot, 1, comm, &status);
+//          }else{
+//              MPI_Recv(&local_data[0], sub_m * sub_n_last, MPI_INT,
+//                        croot, 1, comm, &status);
+//          }
+//      }else{
+//          if(coords[1]<dims[1]-1){
+//              MPI_Recv(&local_data[0], sub_m_last * sub_n, MPI_INT,
+//                        croot, 1, comm, &status);
+//          }else{
+//              MPI_Recv(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
+//                        croot, 1, comm, &status);
+//          }
+//      }
       //Finish distributa data
       
       //persistent communication
       std::vector<int> edge_up, edge_down, edge_left, edge_right;
-      int height, width;
-      if(coords[0]<dims[0]-1){
-          if(coords[1]<dims[1]-1){
-              height = sub_m;
-              width = sub_n
-          }else{
-              height = sub_m;
-              width = sub_n_last;
-          }
-      }else{
-          if(coords[1]<dims[1]-1){
-              height = sub_m_last;
-              width = sub_n
-          }else{
-              height = sub_m_last;
-              width = sub_n_last;
-          }
-      }
+
       edge_up.resize(width+2,0);
       edge_down.resize(width+2,0);
       edge_left.resize(height,0);
@@ -376,52 +380,66 @@ int main(int argc, char** argv) {
       }
       
       //Collect data to rank 0 processor
-      output_data.reserve(m * n);
+      output_data.reserve(global_data.size());
 
-      if(coords[0]<dims[0]-1){
-          if(coords[1]<dims[1]-1){
-              MPI_Isend(&local_data[0], sub_m * sub_n, MPI_INT,
-                        croot, 1, comm, &req);
-          }else{
-              MPI_Isend(&local_data[0], sub_m * sub_n_last, MPI_INT,
-                        croot, 1, comm, &req);
-          }
-      }else{
-          if(coords[1]<dims[1]-1){
-              MPI_Isend(&local_data[0], sub_m_last * sub_n, MPI_INT,
-                        croot, 1, comm, &req);
-          }else{
-              MPI_Isend(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
-                        croot, 1, comm, &req);
-          }
-      }
+      MPI_Isend(&local_data[0], height * width, MPI_INT,
+                croot, 1, comm, &req);
+      
+//      if(coords[0]<dims[0]-1){
+//          if(coords[1]<dims[1]-1){
+//              MPI_Isend(&local_data[0], sub_m * sub_n, MPI_INT,
+//                        croot, 1, comm, &req);
+//          }else{
+//              MPI_Isend(&local_data[0], sub_m * sub_n_last, MPI_INT,
+//                        croot, 1, comm, &req);
+//          }
+//      }else{
+//          if(coords[1]<dims[1]-1){
+//              MPI_Isend(&local_data[0], sub_m_last * sub_n, MPI_INT,
+//                        croot, 1, comm, &req);
+//          }else{
+//              MPI_Isend(&local_data[0], sub_m_last * sub_n_last, MPI_INT,
+//                        croot, 1, comm, &req);
+//          }
+//      }
       
       if(rank==0){
-          int displs;
+          int displs_row = 0;
+          int displs_column = 0;
       for(int i=0; i<dims[0]; i++){
           for(int j=0; j<dims[1]; j++){
-              displs = i * n * sub_m + j * sub_n;
               scoords[0] = i;
               scoords[1] = j;
               MPI_Cart_rank(comm, scoords, &srank);
-              if(i<dims[0]-1){
-                  if(j<dims[1]-1){
-                      MPI_Recv(&output_data[displs], sub_n, col_type,
+              if(i< m % dims[0]){
+                  if(j< n % dims[1]){
+                      MPI_Recv(&output_data[displs_row + displs_column], sub_n, col_type,
                                 srank, 1, comm, &status);
                   }else{
-                      MPI_Recv(&output_data[displs], sub_n_last, col_type,
+                      MPI_Recv(&output_data[displs_row + displs_column], sub_n_last, col_type,
                                 srank, 1, comm, &status);
                   }
               }else{
-                  if(j<dims[1]-1){
-                      MPI_Recv(&output_data[displs], sub_n, col_type_last,
+                  if(j< n % dims[1]){
+                      MPI_Recv(&output_data[displs_row + displs_column], sub_n, col_type_last,
                                 srank, 1, comm, &status);
                   }else{
-                      MPI_Recv(&output_data[displs], sub_n_last, col_type_last,
+                      MPI_Recv(&output_data[displs_row + displs_column], sub_n_last, col_type_last,
                                 srank, 1, comm, &status);
                   }
               }
+              if(j < n % dims[1]){
+                  displs_column += sub_n;
+              }else{
+                  displs_column += sub_n_last;
+              }
           }
+          if(i < m % dims[0]){
+              displs_row += sub_m * n;
+          }else{
+              displs_row += sub_m_last * n;
+          }
+          displs_column = 0;
       }
       }
     
