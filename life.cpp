@@ -151,7 +151,7 @@ void update_innerstate(int m, int n, const int* in_grid, int* out_grid) {
 }
 
 void update_edge(int m, int n, const int* in_grid, int* out_grid,
-                 int upcor[2], int locor[2], int* upedge, int* loedge, int* leftedge, int* rightedge) {
+                 int* upedge, int* loedge, int* leftedge, int* rightedge) {
   
   for (int i = 1; i < m-1; i++) { // For each row
     for (int j = 0; j < n; j += n-1) { // For each column
@@ -276,6 +276,10 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
         }
       }
     }
+}
+
+void update_corner(int m, int n, const int* in_grid, int* out_grid,
+                 int upcor[2], int locor[2], int* upedge, int* loedge, int* leftedge, int* rightedge) {
     
     for (int i = 0; i < m; i += m-1) { // For each row
       for (int j = 0; j < n; j += n-1) { // For each column
@@ -659,11 +663,14 @@ int main(int argc, char** argv) {
           }
           
           update_edge(height, width, local_data.data(), local_output_data.data(),
-                           upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+                      edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+          
+          update_corner(height, width, local_data.data(), local_output_data.data(),
+                        upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
 
-          if(rank==0){
-              std::cout<<"done edge compute"<<"\n";
-          }
+          
+          std::cout<<"rank "<<rank<<" done edge compute"<<"\n";
+          
           
         /* Swap the input and output */
         if (i < gen - 1) {
@@ -676,12 +683,18 @@ int main(int argc, char** argv) {
 
       MPI_Isend(&local_output_data[0], height * width, MPI_INT,
                 croot, 1, comm, &req);
+      std::cout<<"done send from "<<rank<<"\n";
+      
+      if(rank==0){
+          std::cout<<"done send back"<<"\n";
+      }
       
       if(rank==0){
           int displs_row = 0;
           int displs_column = 0;
       for(int i=0; i<dims[0]; i++){
           for(int j=0; j<dims[1]; j++){
+              std::cout<<"i="<<i<<" j= "<<j<<"\n";
               scoords[0] = i;
               scoords[1] = j;
               MPI_Cart_rank(comm, scoords, &srank);
@@ -698,8 +711,11 @@ int main(int argc, char** argv) {
                       MPI_Recv(&output_data[displs_row + displs_column], sub_n, col_type_last,
                                 srank, 1, comm, &status);
                   }else{
+                      std::cout<<"srank= "<<srank<<" croot= "<<croot<<"\n";
                       MPI_Recv(&output_data[displs_row + displs_column], sub_n_last, col_type_last,
                                 srank, 1, comm, &status);
+                      std::cout<<"i="<<i<<" j= "<<j<<"\n";
+                      std::cout<<"n % dims[1]="<<n % dims[1]<<"\n";
                   }
               }
               if(j < n % dims[1]){
@@ -715,6 +731,10 @@ int main(int argc, char** argv) {
           }
           displs_column = 0;
       }
+      }
+      
+      if(rank==0){
+          std::cout<<"done collect data"<<"\n";
       }
     
       MPI_Comm_free(&column_comm);
