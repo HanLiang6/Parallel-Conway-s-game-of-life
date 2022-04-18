@@ -612,12 +612,59 @@ int main(int argc, char** argv) {
       local_output_data.reserve(height * width);
       
       for (int i = 0; i < gen; i++) {
+          if(coords[1]!=0){
+              MPI_Start(&request_send_left);
+              MPI_Start(&request_recv_left);
+          }
+          if(coords[1]!=dims[1]-1){
+              MPI_Start(&request_send_right);
+              MPI_Start(&request_recv_right);
+          }
+          
+          if(coords[1]!=0){
+              MPI_Wait(&request_recv_left, &status);
+              upper_corner_tmp[0] = edge_left[0];
+              lower_corner_tmp[0] = edge_left[height-1];
+          }
+          if(coords[1]!=dims[1]-1){
+              MPI_Wait(&request_recv_right, &status);
+              upper_corner_tmp[1] = edge_right[0];
+              lower_corner_tmp[1] = edge_right[height-1];
+          }
+          
+          if(coords[0]!=0){
+              MPI_Start(&request_send_up);
+              MPI_Start(&request_send_ucorner);
+              MPI_Start(&request_recv_up);
+              MPI_Start(&request_recv_ucorner);
+          }
+          
+          if(coords[0]!=dims[0]-1){
+              MPI_Start(&request_send_down);
+              MPI_Start(&request_send_lcornor);
+              MPI_Start(&request_recv_down);
+              MPI_Start(&request_recv_lcornor);
+          }
           
           update_innerstate(height, width, local_data.data(), local_output_data.data());
+          
+          if(coords[0]!=0){
+              MPI_Wait(&request_recv_up, &status);
+              MPI_Wait(&request_recv_ucorner, &status);
+          }
+          
+          if(coords[0]!=dims[0]-1){
+              MPI_Wait(&request_recv_down, &status);
+              MPI_Wait(&request_recv_lcornor, &status);
+          }
           
           update_edge(height, width, local_data.data(), local_output_data.data(),
                            upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
 
+          if(rank==0){
+              std::cout<<"done edge compute"<<"\n";
+          }
+          
         /* Swap the input and output */
         if (i < gen - 1) {
           std::swap(local_data, local_output_data);
@@ -627,7 +674,7 @@ int main(int argc, char** argv) {
       //Collect data to rank 0 processor
       output_data.reserve(global_data.size());
 
-      MPI_Isend(&local_data[0], height * width, MPI_INT,
+      MPI_Isend(&local_output_data[0], height * width, MPI_INT,
                 croot, 1, comm, &req);
       
       if(rank==0){
