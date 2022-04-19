@@ -473,7 +473,7 @@ int main(int argc, char** argv) {
     }
   } else {
     /* You implement this */
-    //assert(0);
+      
       int crank;
       int dims[NDIM] = {0,0};
       int period[NDIM] = {0,0};
@@ -482,13 +482,16 @@ int main(int argc, char** argv) {
       
       MPI_Dims_create(size, NDIM, dims);
       MPI_Cart_create(MPI_COMM_WORLD, NDIM, dims, period, 1, &comm);
+      //Create a Cartesian topology
       
       MPI_Comm_rank(comm, &crank);
       MPI_Cart_coords(comm, crank, NDIM, coords);
+      //Get the coordinates in the mesh
       
       MPI_Comm row_comm, column_comm;
       MPI_Comm_split(comm, coords[0], coords[1], &row_comm);
       MPI_Comm_split(comm, coords[1], coords[0], &column_comm);
+      //Create row and column communicators.
       
       int croot;
       if(rank==0){
@@ -499,12 +502,14 @@ int main(int argc, char** argv) {
       
       int croot_coords[2];
       MPI_Cart_coords(comm, croot, NDIM, croot_coords);
+      //The coordinates of the root in the mesh
       
       int sub_m, sub_n, sub_m_last, sub_n_last;
       sub_m = m / dims[0] + 1;
       sub_n = n / dims[1] + 1;
       sub_m_last = m / dims[0];
       sub_n_last = n / dims[1];
+      //The sizes of the subgrid
       
       int height, width;
       if(coords[0]< m % dims[0]){
@@ -524,6 +529,7 @@ int main(int argc, char** argv) {
               width = sub_n_last;
           }
       }
+      //Size of the local subgrid
       
       std::vector<int> local_data;
       
@@ -542,6 +548,7 @@ int main(int argc, char** argv) {
       MPI_Type_vector(sub_m_last, sub_n_last, n, MPI_INT, &tmp);
       MPI_Type_create_resized(tmp, 0, sub_n_last * sizeof(int), &col_type_lowerright);
       MPI_Type_commit(&col_type_lowerright);
+      //Create four types of MPI type to distribute the global data
       
       int srank;
       int scoords[NDIM];
