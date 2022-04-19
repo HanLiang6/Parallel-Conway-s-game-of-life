@@ -216,10 +216,10 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
         }
       }
         
-        if(i==1&&j==1&&m==3&&n==2){
-            std::cout<<"alive is "<< alive<< "\n";
-            std::cout<<"out_grid[lin_loc] is "<< out_grid[lin_loc]<< "\n";
-        }
+//        if(i==1&&j==1&&m==3&&n==2){
+//            std::cout<<"alive is "<< alive<< "\n";
+//            std::cout<<"out_grid[lin_loc] is "<< out_grid[lin_loc]<< "\n";
+//        }
         
         if(n==1){
             break;
@@ -529,13 +529,19 @@ int main(int argc, char** argv) {
       
       local_data.reserve(height * width);
       
-      MPI_Datatype tmp, col_type, col_type_last;
-      MPI_Type_vector(sub_m, 1, n, MPI_INT, &tmp);
-      MPI_Type_create_resized(tmp, 0, sizeof(int), &col_type);
-      MPI_Type_commit(&col_type);
-      MPI_Type_vector(sub_m_last, 1, n, MPI_INT, &tmp);
-      MPI_Type_create_resized(tmp, 0, sizeof(int), &col_type_last);
-      MPI_Type_commit(&col_type_last);
+      MPI_Datatype tmp, col_type_upleft, col_type_upright, col_type_lowerleft, col_type_lowerright;
+      MPI_Type_vector(sub_m, sub_n, n, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sub_n * sizeof(int), &col_type_upleft);
+      MPI_Type_commit(&col_type_upleft);
+      MPI_Type_vector(sub_m_last, sub_n, n, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sub_n * sizeof(int), &col_type_lowerleft);
+      MPI_Type_commit(&col_type_lowerleft);
+      MPI_Type_vector(sub_m, sub_n_last, n, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sub_n_last * sizeof(int), &col_type_upright);
+      MPI_Type_commit(&col_type_upright);
+      MPI_Type_vector(sub_m_last, sub_n_last, n, MPI_INT, &tmp);
+      MPI_Type_create_resized(tmp, 0, sub_n_last * sizeof(int), &col_type_lowerright);
+      MPI_Type_commit(&col_type_lowerright);
       
       int srank;
       int scoords[NDIM];
@@ -552,18 +558,18 @@ int main(int argc, char** argv) {
               MPI_Cart_rank(comm, scoords, &srank);
               if(i< m % dims[0]){
                   if(j< n % dims[1]){
-                      MPI_Isend(&global_data[displs_row + displs_column], sub_n, col_type,
+                      MPI_Isend(&global_data[displs_row + displs_column], 1, col_type_upleft,
                                 srank, 1, comm, &req);
                   }else{
-                      MPI_Isend(&global_data[displs_row + displs_column], sub_n_last, col_type,
+                      MPI_Isend(&global_data[displs_row + displs_column], 1, col_type_upright,
                                 srank, 1, comm, &req);
                   }
               }else{
                   if(j< n % dims[1]){
-                      MPI_Isend(&global_data[displs_row + displs_column], sub_n, col_type_last,
+                      MPI_Isend(&global_data[displs_row + displs_column], 1, col_type_lowerleft,
                                 srank, 1, comm, &req);
                   }else{
-                      MPI_Isend(&global_data[displs_row + displs_column], sub_n_last, col_type_last,
+                      MPI_Isend(&global_data[displs_row + displs_column], 1, col_type_lowerright,
                                 srank, 1, comm, &req);
                   }
               }
@@ -707,39 +713,39 @@ int main(int argc, char** argv) {
 
       MPI_Isend(&local_output_data[0], height * width, MPI_INT,
                 croot, 1, comm, &req);
-      std::cout<<"done send from "<<rank<<"\n";
+//      std::cout<<"done send from "<<rank<<"\n";
       
-      if(rank==0){
-          std::cout<<"done send back"<<"\n";
-      }
+//      if(rank==0){
+//          std::cout<<"done send back"<<"\n";
+//      }
       
       if(rank==0){
           int displs_row = 0;
           int displs_column = 0;
       for(int i=0; i<dims[0]; i++){
           for(int j=0; j<dims[1]; j++){
-              std::cout<<"i="<<i<<" j= "<<j<<"\n";
+//              std::cout<<"i="<<i<<" j= "<<j<<"\n";
               scoords[0] = i;
               scoords[1] = j;
               MPI_Cart_rank(comm, scoords, &srank);
               if(i< m % dims[0]){
                   if(j< n % dims[1]){
-                      MPI_Recv(&output_data[displs_row + displs_column], sub_n, col_type,
+                      MPI_Recv(&output_data[displs_row + displs_column], 1, col_type_upleft,
                                 srank, 1, comm, &status);
                   }else{
-                      MPI_Recv(&output_data[displs_row + displs_column], sub_n_last, col_type,
+                      MPI_Recv(&output_data[displs_row + displs_column], 1, col_type_upright,
                                 srank, 1, comm, &status);
                   }
               }else{
                   if(j< n % dims[1]){
-                      MPI_Recv(&output_data[displs_row + displs_column], sub_n, col_type_last,
+                      MPI_Recv(&output_data[displs_row + displs_column], 1, col_type_lowerleft,
                                 srank, 1, comm, &status);
                   }else{
-                      std::cout<<"srank= "<<srank<<" croot= "<<croot<<"\n";
-                      MPI_Recv(&output_data[displs_row + displs_column], sub_n_last, col_type_last,
+//                      std::cout<<"srank= "<<srank<<" croot= "<<croot<<"\n";
+                      MPI_Recv(&output_data[displs_row + displs_column], 1, col_type_lowerright,
                                 srank, 1, comm, &status);
-                      std::cout<<"i="<<i<<" j= "<<j<<"\n";
-                      std::cout<<"n % dims[1]="<<n % dims[1]<<"\n";
+//                      std::cout<<"i="<<i<<" j= "<<j<<"\n";
+//                      std::cout<<"n % dims[1]="<<n % dims[1]<<"\n";
                   }
               }
               if(j < n % dims[1]){
@@ -757,9 +763,9 @@ int main(int argc, char** argv) {
       }
       }
       
-      if(rank==0){
-          std::cout<<"done collect data"<<"\n";
-      }
+//      if(rank==0){
+//          std::cout<<"done collect data"<<"\n";
+//      }
     
       MPI_Comm_free(&column_comm);
       MPI_Comm_free(&row_comm);
