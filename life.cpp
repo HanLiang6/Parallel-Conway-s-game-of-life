@@ -409,7 +409,7 @@ void update_corner(int m, int n, const int* in_grid, int* out_grid,
 /* Read in the data from an input file */
 void read_data(const std::string& input_filename, int m, int n,
                std::vector<int>& output_data) {
-  output_data.reserve(m * n);
+  output_data.reserve(long(m) * long(n));
   std::ifstream input_file(input_filename, std::ios::in);
   for (int i = 0; i < m * n; i++) {
     std::string mystring;
@@ -533,7 +533,7 @@ int main(int argc, char** argv) {
       
       std::vector<int> local_data;
       
-      local_data.reserve(height * width);
+      local_data.reserve(long(height) * long(width));
       
       MPI_Datatype tmp, col_type_upleft, col_type_upright, col_type_lowerleft, col_type_lowerright;
       MPI_Type_vector(sub_m, sub_n, n, MPI_INT, &tmp);
@@ -550,6 +550,8 @@ int main(int argc, char** argv) {
       MPI_Type_commit(&col_type_lowerright);
       //Create four types of MPI type to distribute the global data
       
+      
+      //Start to distribute data
       int srank;
       int scoords[NDIM];
       MPI_Request req;
@@ -595,7 +597,7 @@ int main(int argc, char** argv) {
       }
       }
       
-      MPI_Recv(&local_data[0], height * width, MPI_INT,
+      MPI_Recv(&local_data[0], long(height) * long(width), MPI_INT,
                 croot, 1, comm, &status);
       
       //Finish distributa data
@@ -647,7 +649,7 @@ int main(int argc, char** argv) {
       
       //Update state
       std::vector<int> local_output_data;
-      local_output_data.reserve(height * width);
+      local_output_data.reserve(long(height) * long(width));
       
       for (int i = 0; i < gen; i++) {
           if(coords[1]!=0){
@@ -704,7 +706,7 @@ int main(int argc, char** argv) {
           
         /* Swap the input and output */
         if (i < gen - 1) {
-            for(int j = 0; j< height * width; j++){
+            for(int j = 0; j< long(height) * long(width); j++){
                 local_data[j] = local_output_data[j];
             }
         }
@@ -737,7 +739,7 @@ int main(int argc, char** argv) {
       //Collect data to rank 0 processor
       output_data.reserve(global_data.size());
 
-      MPI_Isend(&local_output_data[0], height * width, MPI_INT,
+      MPI_Isend(&local_output_data[0], long(height) * long(width), MPI_INT,
                 croot, 1, comm, &req);
       
       if(rank==0){
