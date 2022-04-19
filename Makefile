@@ -30,8 +30,8 @@ non_square_test: life 3x8_example.txt 8x3_example.txt
 	@cmp --silent output.txt 8x3_ref.txt; RETVAL=$$?; if [ $$RETVAL -eq 0 ]; then echo "PASS NON-SQUARE TEST"; else echo "Fail non-square test"; fi
 
 test:
-	mpirun --use-hwthread-cpus -np 1 ./life 1000 1000 1 new_grid.txt new_output.text
-	mpirun --use-hwthread-cpus -np 4 ./life 1000 1000 1 new_grid.txt new_output_np.text
+	mpirun --use-hwthread-cpus -np 1 ./life 256 256 1 new_grid.txt new_output.text
+	mpirun --use-hwthread-cpus -np 4 ./life 256 256 1 new_grid.txt new_output_np.text
 	@cmp --silent new_output.text new_output_np.text; RETVAL=$$?; if [ $$RETVAL -eq 0 ]; then echo "PASS 1k TEST"; else echo "Fail 1k test"; fi
 
 non_square_test_np: life 3x8_example.txt 8x3_example.txt

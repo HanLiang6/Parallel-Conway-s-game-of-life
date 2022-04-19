@@ -599,7 +599,6 @@ int main(int argc, char** argv) {
       
       MPI_Recv(&local_data[0], long(height) * long(width), MPI_INT,
                 croot, 1, comm, &status);
-      
       //Finish distributa data
       
       //persistent communication
@@ -690,21 +689,26 @@ int main(int argc, char** argv) {
           
           if(coords[0]!=0){
               MPI_Wait(&request_recv_up, &status);
-              MPI_Wait(&request_recv_ucorner, &status);
           }
           
           if(coords[0]!=dims[0]-1){
               MPI_Wait(&request_recv_down, &status);
-              MPI_Wait(&request_recv_lcornor, &status);
           }
           
           update_edge(height, width, local_data.data(), local_output_data.data(),
                       edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+
+          if(coords[0]!=0){
+              MPI_Wait(&request_recv_ucorner, &status);
+          }
+          
+          if(coords[0]!=dims[0]-1){
+              MPI_Wait(&request_recv_lcornor, &status);
+          }
           
           update_corner(height, width, local_data.data(), local_output_data.data(),
                         upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
           
-        /* Swap the input and output */
         if (i < gen - 1) {
             for(int j = 0; j< long(height) * long(width); j++){
                 local_data[j] = local_output_data[j];
@@ -781,7 +785,9 @@ int main(int argc, char** argv) {
           displs_column = 0;
       }
       }
-        
+
+      MPI_Wait(&req, &status);
+      
       MPI_Comm_free(&column_comm);
       MPI_Comm_free(&row_comm);
       MPI_Comm_free(&comm);
