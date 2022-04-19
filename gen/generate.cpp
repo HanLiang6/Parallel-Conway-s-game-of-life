@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
     /* Allocate the output data buffer */
       output_data.reserve(m*n);
       for(int i = 0; i < m*n; i++) {
-          output_data[i]=i;
+          output_data[i]=rand() % 2;
       }
     }
 

@@ -732,18 +732,12 @@ int main(int argc, char** argv) {
 
       MPI_Isend(&local_output_data[0], height * width, MPI_INT,
                 croot, 1, comm, &req);
-//      std::cout<<"done send from "<<rank<<"\n";
-      
-//      if(rank==0){
-//          std::cout<<"done send back"<<"\n";
-//      }
       
       if(rank==0){
           int displs_row = 0;
           int displs_column = 0;
       for(int i=0; i<dims[0]; i++){
           for(int j=0; j<dims[1]; j++){
-//              std::cout<<"i="<<i<<" j= "<<j<<"\n";
               scoords[0] = i;
               scoords[1] = j;
               MPI_Cart_rank(comm, scoords, &srank);
@@ -760,11 +754,8 @@ int main(int argc, char** argv) {
                       MPI_Recv(&output_data[displs_row + displs_column], 1, col_type_lowerleft,
                                 srank, 1, comm, &status);
                   }else{
-//                      std::cout<<"srank= "<<srank<<" croot= "<<croot<<"\n";
                       MPI_Recv(&output_data[displs_row + displs_column], 1, col_type_lowerright,
                                 srank, 1, comm, &status);
-//                      std::cout<<"i="<<i<<" j= "<<j<<"\n";
-//                      std::cout<<"n % dims[1]="<<n % dims[1]<<"\n";
                   }
               }
               if(j < n % dims[1]){
@@ -781,11 +772,7 @@ int main(int argc, char** argv) {
           displs_column = 0;
       }
       }
-      
-//      if(rank==0){
-//          std::cout<<"done collect data"<<"\n";
-//      }
-    
+        
       MPI_Comm_free(&column_comm);
       MPI_Comm_free(&row_comm);
       MPI_Comm_free(&comm);
@@ -798,5 +785,3 @@ int main(int argc, char** argv) {
 
   MPI_Finalize();
 }
-
-//This is on a new branch
