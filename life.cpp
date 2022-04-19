@@ -154,7 +154,7 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
                  int* upedge, int* loedge, int* leftedge, int* rightedge) {
   
   for (int i = 1; i < m-1; i++) { // For each row
-    for (int j = 0; j < n; j += n-1) { // For each column
+    for (int j = 0; j < n; j += n-1) { // For first and last column
         
     //n-1 could be 0, fix!
         
@@ -215,6 +215,12 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
           out_grid[lin_loc] = 0;
         }
       }
+        
+        if(i==1&&j==1&&m==3&&n==2){
+            std::cout<<"alive is "<< alive<< "\n";
+            std::cout<<"out_grid[lin_loc] is "<< out_grid[lin_loc]<< "\n";
+        }
+        
         if(n==1){
             break;
         }
@@ -614,16 +620,16 @@ int main(int argc, char** argv) {
       
       if(coords[0]!=0){
           MPI_Send_init(&local_data[0], width, MPI_INT, coords[0]-1, 1, column_comm, &request_send_up);
-          MPI_Send_init(&upper_corner_tmp[0], 2, MPI_INT, coords[0]-1, 1, column_comm, &request_send_ucorner);
+          MPI_Send_init(&upper_corner_tmp[0], 2, MPI_INT, coords[0]-1, 2, column_comm, &request_send_ucorner);
           MPI_Recv_init(&edge_up[0], width, MPI_INT, coords[0]-1, 1, column_comm, &request_recv_up);
-          MPI_Recv_init(&upper_corner[0], 2, MPI_INT, coords[0]-1, 1, column_comm, &request_recv_ucorner);
+          MPI_Recv_init(&upper_corner[0], 2, MPI_INT, coords[0]-1, 2, column_comm, &request_recv_ucorner);
       }
       
       if(coords[0]!=dims[0]-1){
           MPI_Send_init(&local_data[width * (height - 1)], width, MPI_INT, coords[0]+1, 1, column_comm, &request_send_down);
-          MPI_Send_init(&lower_corner_tmp[0], 2, MPI_INT, coords[0]+1, 1, column_comm, &request_send_lcornor);
+          MPI_Send_init(&lower_corner_tmp[0], 2, MPI_INT, coords[0]+1, 2, column_comm, &request_send_lcornor);
           MPI_Recv_init(&edge_down[0], width, MPI_INT, coords[0]+1, 1, column_comm, &request_recv_down);
-          MPI_Recv_init(&lower_corner[0], 2, MPI_INT, coords[0]+1, 1, column_comm, &request_recv_lcornor);
+          MPI_Recv_init(&lower_corner[0], 2, MPI_INT, coords[0]+1, 2, column_comm, &request_recv_lcornor);
       }
       
       //Update state
@@ -677,18 +683,17 @@ int main(int argc, char** argv) {
               MPI_Wait(&request_recv_lcornor, &status);
           }
           
-          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" ready for edge compute"<<"\n";
+//          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" ready for edge compute"<<"\n";
           
           update_edge(height, width, local_data.data(), local_output_data.data(),
                       edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
           
-          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done edge compute"<<"\n";
+//          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done edge compute"<<"\n";
           
           update_corner(height, width, local_data.data(), local_output_data.data(),
                         upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
-
           
-          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done corner compute"<<"\n";
+//          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done corner compute"<<"\n";
           
           
         /* Swap the input and output */
