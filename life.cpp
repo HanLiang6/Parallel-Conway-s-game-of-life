@@ -689,23 +689,42 @@ int main(int argc, char** argv) {
               MPI_Wait(&request_recv_lcornor, &status);
           }
           
-//          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" ready for edge compute"<<"\n";
-          
           update_edge(height, width, local_data.data(), local_output_data.data(),
                       edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
-          
-//          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done edge compute"<<"\n";
           
           update_corner(height, width, local_data.data(), local_output_data.data(),
                         upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
           
-//          std::cout<<"rank "<<rank<<" coordinates "<<"("<<coords[0]<<", "<< coords[1]<<")"<<" done corner compute"<<"\n";
-          
-          
         /* Swap the input and output */
         if (i < gen - 1) {
-          std::swap(local_data, local_output_data);
+            for(int j = 0; j< height * width; j++){
+                local_data[j] = local_output_data[j];
+            }
         }
+      }
+      
+      if(coords[1]!=0){
+          MPI_Request_free(&request_send_left);
+          MPI_Request_free(&request_recv_left);
+      }
+      
+      if(coords[1]!=dims[1]-1){
+          MPI_Request_free(&request_send_right);
+          MPI_Request_free(&request_recv_right);
+      }
+      
+      if(coords[0]!=0){
+          MPI_Request_free(&request_send_up);
+          MPI_Request_free(&request_send_ucorner);
+          MPI_Request_free(&request_recv_up);
+          MPI_Request_free(&request_recv_ucorner);
+      }
+      
+      if(coords[0]!=dims[0]-1){
+          MPI_Request_free(&request_send_down);
+          MPI_Request_free(&request_send_lcornor);
+          MPI_Request_free(&request_recv_down);
+          MPI_Request_free(&request_recv_lcornor);
       }
       
       //Collect data to rank 0 processor
