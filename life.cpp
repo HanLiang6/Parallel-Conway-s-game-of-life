@@ -156,8 +156,6 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
   for (int i = 1; i < m-1; i++) { // For each row
     for (int j = 0; j < n; j += n-1) { // For first and last column
         
-    //n-1 could be 0, fix!
-        
       //Consider a single element
       int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
 
@@ -198,6 +196,8 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
                 }
             }
         }
+        //Check elements at edges of neighboring subgrids
+        //Note that the leftmost edge could also be the rightmost edge
 
       /* Based on the number of alive neighbors, update the output accordingly */
       if (in_grid[lin_loc]) {
@@ -216,18 +216,14 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
         }
       }
         
-//        if(i==1&&j==1&&m==3&&n==2){
-//            std::cout<<"alive is "<< alive<< "\n";
-//            std::cout<<"out_grid[lin_loc] is "<< out_grid[lin_loc]<< "\n";
-//        }
-        
         if(n==1){
             break;
         }
+        //If the width of the subgrid is 1, this for loop should only run once
     }
   }
     
-    for (int i = 0; i < m; i += m-1) { // For each row
+    for (int i = 0; i < m; i += m-1) { // For the first and last row
       for (int j = 1; j < n-1; j++) { // For each column
         //Consider a single element
         int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
@@ -290,14 +286,15 @@ void update_edge(int m, int n, const int* in_grid, int* out_grid,
         if(m==1){
             break;
         }
+        //If the height of the subgrid is 1 this loop should only run once
     }
 }
 
 void update_corner(int m, int n, const int* in_grid, int* out_grid,
                  int upcor[2], int locor[2], int* upedge, int* loedge, int* leftedge, int* rightedge) {
     
-    for (int i = 0; i < m; i += m-1) { // For each row
-      for (int j = 0; j < n; j += n-1) { // For each column
+    for (int i = 0; i < m; i += m-1) { // For the first and last row
+      for (int j = 0; j < n; j += n-1) { // For the first and last column
         //Consider a single element
         int lin_loc = linear_index(m, n, i, j); //This is the linear index of the element
 
@@ -375,6 +372,7 @@ void update_corner(int m, int n, const int* in_grid, int* out_grid,
                   }
               }
           }
+          //One subgrid could have 1, 2 or 4 corners
           
 
 
@@ -401,6 +399,7 @@ void update_corner(int m, int n, const int* in_grid, int* out_grid,
         if(m==1){
             break;
         }
+        //If the height or the width of the subgrid is 1, this loop should not run multiple times
     }
 
 }
@@ -409,7 +408,7 @@ void update_corner(int m, int n, const int* in_grid, int* out_grid,
 /* Read in the data from an input file */
 void read_data(const std::string& input_filename, int m, int n,
                std::vector<int>& output_data) {
-  output_data.reserve(long(m) * long(n));
+  output_data.reserve(m * n);
   std::ifstream input_file(input_filename, std::ios::in);
   for (int i = 0; i < m * n; i++) {
     std::string mystring;
@@ -472,9 +471,8 @@ int main(int argc, char** argv) {
       }
     }
   } else {
-    /* You implement this */
       
-      int crank;
+      int crank; //Cartesian rank
       int dims[NDIM] = {0,0};
       int period[NDIM] = {0,0};
       int coords[NDIM];
@@ -498,18 +496,18 @@ int main(int argc, char** argv) {
           croot = crank;
       }
       MPI_Bcast(&croot, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      //Broadcast the rank of the root in the Cartesian network
+      //Broadcast the rank of the root in the Cartesian grid to other processors
       
       int croot_coords[2];
       MPI_Cart_coords(comm, croot, NDIM, croot_coords);
-      //The coordinates of the root in the mesh
+      //Get coordinates of the root in the grid
       
       int sub_m, sub_n, sub_m_last, sub_n_last;
       sub_m = m / dims[0] + 1;
       sub_n = n / dims[1] + 1;
       sub_m_last = m / dims[0];
       sub_n_last = n / dims[1];
-      //The sizes of the subgrid
+      //Possible sizes of the subgrid
       
       int height, width;
       if(coords[0]< m % dims[0]){
@@ -533,7 +531,7 @@ int main(int argc, char** argv) {
       
       std::vector<int> local_data;
       
-      local_data.reserve(long(height) * long(width));
+      local_data.reserve(height * width);
       
       MPI_Datatype tmp, col_type_upleft, col_type_upright, col_type_lowerleft, col_type_lowerright;
       MPI_Type_vector(sub_m, sub_n, n, MPI_INT, &tmp);
@@ -548,7 +546,7 @@ int main(int argc, char** argv) {
       MPI_Type_vector(sub_m_last, sub_n_last, n, MPI_INT, &tmp);
       MPI_Type_create_resized(tmp, 0, sub_n_last * sizeof(int), &col_type_lowerright);
       MPI_Type_commit(&col_type_lowerright);
-      //Create four types of MPI type to distribute the global data
+      //Create four MPI types to distribute the global data
       
       
       //Start to distribute data
@@ -597,9 +595,9 @@ int main(int argc, char** argv) {
       }
       }
       
-      MPI_Recv(&local_data[0], long(height) * long(width), MPI_INT,
+      MPI_Recv(&local_data[0], height * width, MPI_INT,
                 croot, 1, comm, &status);
-      //Finish distributa data
+      //Finish distributing data
       
       //persistent communication
       std::vector<int> edge_up, edge_down, edge_left, edge_right;
@@ -607,6 +605,7 @@ int main(int argc, char** argv) {
       int lower_corner_tmp[2] = {0,0};
       int upper_corner[2] = {0,0};
       int lower_corner[2] = {0,0};
+      //Elements at corners need to be sent twice
 
       edge_up.resize(width,0);
       edge_down.resize(width,0);
@@ -621,6 +620,7 @@ int main(int argc, char** argv) {
       MPI_Type_vector(height, 1, width, MPI_INT, &tmp);
       MPI_Type_create_resized(tmp, 0, sizeof(int), &local_col_type);
       MPI_Type_commit(&local_col_type);
+      //A derived data type used to communicate the leftmost and rightmost columns
       
       if(coords[1]!=0){
           MPI_Send_init(&local_data[0], 1, local_col_type, coords[1]-1, 1, row_comm, &request_send_left);
@@ -648,7 +648,7 @@ int main(int argc, char** argv) {
       
       //Update state
       std::vector<int> local_output_data;
-      local_output_data.reserve(long(height) * long(width));
+      local_output_data.reserve(height * width);
       
       for (int i = 0; i < gen; i++) {
           if(coords[1]!=0){
@@ -670,6 +670,7 @@ int main(int argc, char** argv) {
               upper_corner_tmp[1] = edge_right[0];
               lower_corner_tmp[1] = edge_right[height-1];
           }
+          //The corner elements need to be sent twice so the MPI_Wait is necessary here
           
           if(coords[0]!=0){
               MPI_Start(&request_send_up);
@@ -686,6 +687,7 @@ int main(int argc, char** argv) {
           }
           
           update_innerstate(height, width, local_data.data(), local_output_data.data());
+          //Compute the internal part of the state
           
           if(coords[0]!=0){
               MPI_Wait(&request_recv_up, &status);
@@ -697,6 +699,7 @@ int main(int argc, char** argv) {
           
           update_edge(height, width, local_data.data(), local_output_data.data(),
                       edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+          //Compute the edge of the subgrid
 
           if(coords[0]!=0){
               MPI_Wait(&request_recv_ucorner, &status);
@@ -708,9 +711,10 @@ int main(int argc, char** argv) {
           
           update_corner(height, width, local_data.data(), local_output_data.data(),
                         upper_corner, lower_corner, edge_up.data(), edge_down.data(), edge_left.data(), edge_right.data());
+          //Compute the state at corners
           
         if (i < gen - 1) {
-            for(int j = 0; j< long(height) * long(width); j++){
+            for(int j = 0; j< height * width; j++){
                 local_data[j] = local_output_data[j];
             }
         }
@@ -743,7 +747,7 @@ int main(int argc, char** argv) {
       //Collect data to rank 0 processor
       output_data.reserve(global_data.size());
 
-      MPI_Isend(&local_output_data[0], long(height) * long(width), MPI_INT,
+      MPI_Isend(&local_output_data[0], height * width, MPI_INT,
                 croot, 1, comm, &req);
       
       if(rank==0){
