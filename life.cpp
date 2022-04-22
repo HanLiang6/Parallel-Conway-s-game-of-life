@@ -1,3 +1,5 @@
+//Han Liang
+
 #include <mpi.h>
 #include <omp.h>
 
