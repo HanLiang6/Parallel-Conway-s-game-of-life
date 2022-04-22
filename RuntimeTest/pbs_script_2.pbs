@@ -1,0 +1,41 @@
+#PBS -N PA1
+#PBS -l nodes=2:ppn=8
+#PBS -l walltime=30:00
+#PBS -q coc-ice-multi
+#PBS -o $PBS_JOBID.out
+#PBS -e $PBS_JOBID.err
+
+cd $PBS_O_WORKDIR
+module load gcc openmpi
+make
+make test
+
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 4 ./life 2000 2000 1 new_grid_2K.txt new_output_np.text
+mpirun -np 4 ./life 2000 2000 1 new_grid_2K.txt new_output_np.text
+mpirun -np 4 ./life 2000 2000 1 new_grid_2K.txt new_output_np.text
+mpirun -np 4 ./life 2000 2000 1 new_grid_2K.txt new_output_np.text
+
+mpirun -np 4 ./life 1000 1000 1 new_grid_1K.txt new_output_np.text
+mpirun -np 4 ./life 1000 1000 1 new_grid_1K.txt new_output_np.text
+mpirun -np 4 ./life 1000 1000 1 new_grid_1K.txt new_output_np.text
+mpirun -np 4 ./life 1000 1000 1 new_grid_1K.txt new_output_np.text
+
+mpirun -np 4 ./life 500 500 1 new_grid_500.txt new_output_np.text
+mpirun -np 4 ./life 500 500 1 new_grid_500.txt new_output_np.text
+mpirun -np 4 ./life 500 500 1 new_grid_500.txt new_output_np.text
+mpirun -np 4 ./life 500 500 1 new_grid_500.txt new_output_np.text
+
+mpirun -np 4 ./life 250 250 1 new_grid_250.txt new_output_np.text
+mpirun -np 4 ./life 250 250 1 new_grid_250.txt new_output_np.text
+mpirun -np 4 ./life 250 250 1 new_grid_250.txt new_output_np.text
+mpirun -np 4 ./life 250 250 1 new_grid_250.txt new_output_np.text
+
+mpirun -np 4 ./life 100 100 1 new_grid_100.txt new_output_np.text
+mpirun -np 4 ./life 100 100 1 new_grid_100.txt new_output_np.text
+mpirun -np 4 ./life 100 100 1 new_grid_100.txt new_output_np.text
+mpirun -np 4 ./life 100 100 1 new_grid_100.txt new_output_np.text

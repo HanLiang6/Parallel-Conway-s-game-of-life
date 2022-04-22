@@ -1,0 +1,45 @@
+#PBS -N PA1
+#PBS -l nodes=2:ppn=8
+#PBS -l walltime=30:00
+#PBS -q coc-ice-multi
+#PBS -o $PBS_JOBID.out
+#PBS -e $PBS_JOBID.err
+
+cd $PBS_O_WORKDIR
+module load gcc openmpi
+make
+
+mpirun -np 1 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 1 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 1 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 1 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 2 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 2 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 2 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 2 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 4 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 8 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 8 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 8 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 8 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 9 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 9 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 9 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 9 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 12 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 12 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 12 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 12 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+
+mpirun -np 16 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 16 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 16 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
+mpirun -np 16 ./life 5000 5000 1 new_grid_5K.txt new_output_np.text
